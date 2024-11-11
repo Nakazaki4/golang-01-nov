@@ -1,6 +1,6 @@
 package main
 
-import "fmt"
+//import "fmt"
 
 func CanJump(arr []uint) bool {
 	length := len(arr) - 1
