@@ -1,0 +1,1 @@
+find . -not -lname "*" | wc -l
