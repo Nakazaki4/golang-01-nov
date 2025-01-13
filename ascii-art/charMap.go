@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"bufio"
 	"os"
 )
 
@@ -36,17 +36,16 @@ func getCharAddress(text string) []int {
 	return addr
 }
 
-func getCharsAscii(banner string, lines []int) ([]string, error) {
+func getCharsAscii(banner string, lines []int) error {
 	content, err := os.Open(banner)
 	if err != nil {
-		return _,err
+		return err
 	}
 	defer content.Close()
 
 	r := bufio.NewScanner(content)
 
 	var allLines []string
-	var result []string
 
 	for r.Scan() {
 		allLines = append(allLines, r.Text())
@@ -57,10 +56,10 @@ func getCharsAscii(banner string, lines []int) ([]string, error) {
 			start := lines[j] - 1
 			if start+i < len(allLines) {
 				c := allLines[start+i]
-				result = append(result, c)
+				fmt.Print(c)
 			}
 		}
-		result = append(result, "\n")
+		fmt.Println()
 	}
-	return result, err
+	return err
 }

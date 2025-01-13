@@ -29,6 +29,8 @@ func main() {
 	}
 
 	textToDraw = args[2]
+	textToDrawValidation(textToDraw)
+
 	bannerToUse = args[3]
 
 	file, error := os.Open(bannerToUse + ".txt")
@@ -39,8 +41,18 @@ func main() {
 
 	charMapping()
 	err := getCharsAscii(bannerToUse+".txt", getCharAddress(textToDraw))
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func textToDrawValidation(text string) {
+	runes := []rune(text)
+
+	for _, char := range runes {
+		if char < 32 || char > 126 {
+			log.Fatal("Your text contains a special character")
+		}
 	}
 }
 
