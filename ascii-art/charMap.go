@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	//"strings"
 )
 
 var charMap = make(map[rune]int)
@@ -37,29 +36,31 @@ func getCharAddress(text string) []int {
 	return addr
 }
 
-func getCharsAscii(banner string, lines []int) error {
+func getCharsAscii(banner string, lines []int) ([]string, error) {
 	content, err := os.Open(banner)
 	if err != nil {
-		return err
+		return _,err
 	}
 	defer content.Close()
 
 	r := bufio.NewScanner(content)
 
 	var allLines []string
+	var result []string
 
 	for r.Scan() {
 		allLines = append(allLines, r.Text())
 	}
 
 	for i := 0; i < 8; i++ {
-        for j := 0; j < len(lines); j++ {
-            start := lines[j] - 1
-            if start+i < len(allLines) {
-                fmt.Print(allLines[start+i])
-            }
-        }
-        fmt.Println()
-    }
-	return nil
+		for j := 0; j < len(lines); j++ {
+			start := lines[j] - 1
+			if start+i < len(allLines) {
+				c := allLines[start+i]
+				result = append(result, c)
+			}
+		}
+		result = append(result, "\n")
+	}
+	return result, err
 }
