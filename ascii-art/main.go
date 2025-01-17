@@ -4,60 +4,51 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"strings"
 )
 
 func main() {
 	args := os.Args
 
-	var outputFilename, textToDraw, bannerToUse string
+	var textToDraw string
+	bannerToUse := "/home/aboudchar/Desktop/golang-01-nov/ascii-art/standard.txt"
 
-	if len(args) < 2 || len(args) < 3 || len(args) < 4 {
-		errorMessage()
+	if len(args) != 2 {
+		log.Fatal("You should input exactly one argument")
 	}
 
-	if strings.HasPrefix(args[1], "--output=") {
-		outputFilename = args[1]
-		r := regexp.MustCompile(`--output=(\w+.txt)$`)
-		outputFilename = r.ReplaceAllString(r.FindString(outputFilename), "$1")
-		if !(strings.HasSuffix(outputFilename, ".txt")) {
-			errorMessage()
-		}
-	} else {
-		log.Fatal("Invalid output file name")
+	textToDraw = args[1]
+	if textToDraw == "" {
+		return
+	}else if textToDraw == "\\n"{
+		fmt.Println()
+		return
 	}
-
-	textToDraw = args[2]
 	textToDrawValidation(textToDraw)
 
-	bannerToUse = args[3]
-
-	file, error := os.Open(bannerToUse + ".txt")
-	if error != nil {
-		log.Fatal(error)
+	file, err := os.Open(bannerToUse)
+	if err != nil {
+		log.Fatal(err)
 	}
 	defer file.Close()
 
 	charMapping()
-	err := getCharsAscii(bannerToUse+".txt", getCharAddress(textToDraw))
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
-func textToDrawValidation(text string) {
-	runes := []rune(text)
+	lines := strings.Split(textToDraw, "\\n")
 
-	for _, char := range runes {
-		if char < 32 || char > 126 {
-			log.Fatal("Your text contains a special character")
+	for _, line := range lines {
+		if line == "" {
+			fmt.Println()
+		} else {
+			printAsciiChars(bannerToUse, line)
 		}
 	}
 }
 
-// Prints the formating instructions and Exits with code 1
-func errorMessage() {
-	fmt.Println("Usage: go run . [OPTION] [STRING] [BANNER] \nEX: go run . --output=<fileName.txt> something standard")
-	os.Exit(1)
+func textToDrawValidation(text string) {
+	for _, char := range text {
+		if char < 32 || char > 126 {
+			log.Fatal("Your text contains a special character")
+		}
+	}
 }

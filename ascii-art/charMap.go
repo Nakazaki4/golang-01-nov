@@ -1,16 +1,17 @@
 package main
 
 import (
-	"fmt"
 	"bufio"
+	"fmt"
 	"os"
+	"log"
 )
 
 var charMap = make(map[rune]int)
 
 func charMapping() {
 	chars := []rune{
-		'!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
+		' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		':', ';', '<', '=', '>', '?', '@',
 		'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
@@ -19,47 +20,41 @@ func charMapping() {
 		'{', '|', '}', '~',
 	}
 
-	index := 12
+	index := 3
 	for i := 0; i < len(chars); i++ {
 		charMap[chars[i]] = index
 		index += 9
 	}
 }
 
-func getCharAddress(text string) []int {
-	runes := []rune(text)
-	addr := make([]int, len(text))
-
-	for i, r := range runes {
-		addr[i] = charMap[r]
-	}
-	return addr
+func getCharAddress(r rune) int {
+	return charMap[r]
 }
 
-func getCharsAscii(banner string, lines []int) error {
+func printAsciiChars(banner string, text string) {
+	// Open the banner file
 	content, err := os.Open(banner)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	defer content.Close()
 
 	r := bufio.NewScanner(content)
-
 	var allLines []string
 
+	// Read the entire banner into memory
 	for r.Scan() {
 		allLines = append(allLines, r.Text())
 	}
 
-	for i := 0; i < 8; i++ {
-		for j := 0; j < len(lines); j++ {
-			start := lines[j] - 1
-			if start+i < len(allLines) {
-				c := allLines[start+i]
-				fmt.Print(c)
+	// Convert each character in `text` to its corresponding ASCII lines
+	for i := 0; i < 8; i++ { // 8 lines per character in the ASCII art
+		for _, char := range text {
+			start := getCharAddress(char) - 1
+			if start+i < len(allLines) && start+i >= 0 {
+				fmt.Print(allLines[start+i])
 			}
 		}
-		fmt.Println()
+		fmt.Println() // Move to the next line of ASCII art
 	}
-	return err
 }
