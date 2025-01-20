@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var textToDrawLen int
+
 func main() {
 	args := os.Args
 
@@ -18,10 +20,16 @@ func main() {
 	}
 
 	textToDraw = args[1]
+	textToDrawLen = len(textToDraw)
 	if textToDraw == "" {
 		return
-	}else if textToDraw == "\\n"{
+	} else if textToDraw == "\\n" {
 		fmt.Println()
+		return
+	} else if multipleNewLines(textToDraw) {
+		for i := 0; i < textToDrawLen/2; i++ {
+			fmt.Println()
+		}
 		return
 	}
 	textToDrawValidation(textToDraw)
@@ -51,4 +59,15 @@ func textToDrawValidation(text string) {
 			log.Fatal("Your text contains a special character")
 		}
 	}
+}
+
+func multipleNewLines(text string) bool {
+	for i := 0; i < textToDrawLen; i++ {
+		if i < textToDrawLen-1 && !(text[i] == '\\' && text[i+1] == 'n') {
+			return false
+		} else {
+			i++
+		}
+	}
+	return true
 }
