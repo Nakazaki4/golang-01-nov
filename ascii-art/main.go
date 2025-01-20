@@ -7,34 +7,35 @@ import (
 	"strings"
 )
 
-var textToDrawLen int
+var inputLength int
 
 func main() {
 	args := os.Args
 
-	var textToDraw string
-	bannerToUse := "/home/aboudchar/Desktop/golang-01-nov/ascii-art/standard.txt"
+	bannerFilePath := "/home/aboudchar/Desktop/golang-01-nov/ascii-art/standard.txt"
 
 	if len(args) != 2 {
 		log.Fatal("You should input exactly one argument")
 	}
 
-	textToDraw = args[1]
-	textToDrawLen = len(textToDraw)
+	textToDraw := args[1]
+	inputLength = len(textToDraw)
+
 	if textToDraw == "" {
 		return
 	} else if textToDraw == "\\n" {
 		fmt.Println()
 		return
-	} else if multipleNewLines(textToDraw) {
-		for i := 0; i < textToDrawLen/2; i++ {
+	} else if isMultipleNewLines(textToDraw) {
+		for i := 0; i < inputLength/2; i++ {
 			fmt.Println()
 		}
 		return
 	}
+
 	textToDrawValidation(textToDraw)
 
-	file, err := os.Open(bannerToUse)
+	file, err := os.Open(bannerFilePath)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -48,7 +49,7 @@ func main() {
 		if line == "" {
 			fmt.Println()
 		} else {
-			printAsciiChars(bannerToUse, line)
+			printAsciiChars(bannerFilePath, line)
 		}
 	}
 }
@@ -56,14 +57,14 @@ func main() {
 func textToDrawValidation(text string) {
 	for _, char := range text {
 		if char < 32 || char > 126 {
-			log.Fatal("Your text contains a special character")
+			log.Fatal("Your text contains some special character which is not accepted")
 		}
 	}
 }
 
-func multipleNewLines(text string) bool {
-	for i := 0; i < textToDrawLen; i++ {
-		if i < textToDrawLen-1 && !(text[i] == '\\' && text[i+1] == 'n') {
+func isMultipleNewLines(text string) bool {
+	for i := 0; i < inputLength; i++ {
+		if i < inputLength-1 && !(text[i] == '\\' && text[i+1] == 'n') {
 			return false
 		} else {
 			i++
