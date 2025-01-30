@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"log"
 )
 
 var charMap = make(map[rune]int)
@@ -31,22 +28,7 @@ func getCharAddress(r rune) int {
 	return charMap[r]
 }
 
-func printAsciiChars(banner string, text string) {
-	// Open the banner file
-	content, err := os.Open(banner)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer content.Close()
-
-	r := bufio.NewScanner(content)
-	var allLines []string
-
-	// Read the entire banner into memory
-	for r.Scan() {
-		allLines = append(allLines, r.Text())
-	}
-
+func printAsciiChars(text string, allLines []string) {
 	// Convert each character in `text` to its corresponding ASCII lines
 	for i := 0; i < 8; i++ { // 8 lines per character in the ASCII art
 		for _, char := range text {

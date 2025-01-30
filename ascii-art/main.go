@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +13,7 @@ var inputLength int
 func main() {
 	args := os.Args
 
-	bannerFilePath := "/home/aboudchar/Desktop/golang-01-nov/ascii-art/standard.txt"
+	bannerFilePath := "/home/nakazaki/Desktop/golang-01-nov/ascii-art/standard.txt"
 
 	if len(args) != 2 {
 		log.Fatal("You should input exactly one argument")
@@ -34,6 +35,7 @@ func main() {
 	}
 
 	textToDrawValidation(textToDraw)
+	allLines := bannerScanner(bannerFilePath)
 
 	file, err := os.Open(bannerFilePath)
 	if err != nil {
@@ -49,7 +51,7 @@ func main() {
 		if line == "" {
 			fmt.Println()
 		} else {
-			printAsciiChars(bannerFilePath, line)
+			printAsciiChars(line, allLines)
 		}
 	}
 }
@@ -63,12 +65,30 @@ func textToDrawValidation(text string) {
 }
 
 func isMultipleNewLines(text string) bool {
+	if text == "\\" {
+		return false
+	}
 	for i := 0; i < inputLength; i++ {
 		if i < inputLength-1 && !(text[i] == '\\' && text[i+1] == 'n') {
 			return false
-		} else {
-			i++
 		}
 	}
 	return true
+}
+
+func bannerScanner(banner string) []string {
+	content, err := os.Open(banner)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer content.Close()
+
+	r := bufio.NewScanner(content)
+	var allLines []string
+
+	// Read the entire banner into memory
+	for r.Scan() {
+		allLines = append(allLines, r.Text())
+	}
+	return allLines
 }
