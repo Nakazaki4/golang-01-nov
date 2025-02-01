@@ -37,23 +37,30 @@ func main() {
 	textToDrawValidation(textToDraw)
 	allLines := bannerScanner(bannerFilePath)
 
-	file, err := os.Open(bannerFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
 	charMapping()
 
-	lines := strings.Split(textToDraw, "\\n")
+	if textContainsN(textToDraw) {
+		lines := strings.Split(textToDraw, "\\n")
 
-	for _, line := range lines {
-		if line == "" {
-			fmt.Println()
-		} else {
-			printAsciiChars(line, allLines)
+		for _, line := range lines {
+			if line == "" {
+				fmt.Println()
+			} else {
+				printAsciiChars(line, allLines)
+			}
+		}
+	} else {
+		printAsciiChars(textToDraw, allLines)
+	}
+}
+
+func textContainsN(text string) bool {
+	for i := 0; i < len(text); i++ {
+		if i < inputLength-1 && !(text[i] == '\\' && text[i+1] == 'n') {
+			return true
 		}
 	}
+	return false
 }
 
 func textToDrawValidation(text string) {
@@ -70,10 +77,10 @@ func isMultipleNewLines(text string) bool {
 	}
 	for i := 0; i < inputLength; i++ {
 		if i < inputLength-1 && !(text[i] == '\\' && text[i+1] == 'n') {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func bannerScanner(banner string) []string {
