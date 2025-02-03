@@ -28,6 +28,11 @@ func rootHandler(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if request.URL.Path != "/"{
+		
+		http.Error(writer, "", http.StatusNotFound)
+		return
+	}
 
 	err := tmpl.Execute(writer, nil)
 	if err != nil {

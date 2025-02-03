@@ -29,7 +29,6 @@ func getCharAddress(r rune) int {
 }
 
 func printAsciiChars(text string, allLines []string) {
-	
 	// Convert each character in `text` to its corresponding ASCII lines
 	for i := 0; i < 8; i++ { // 8 lines per character in the ASCII art
 		for _, char := range text {

@@ -75,12 +75,12 @@ func isMultipleNewLines(text string) bool {
 	if text == "\\" {
 		return false
 	}
-	for i := 0; i < inputLength; i++ {
+	for i := 0; i < inputLength; i+=2 {
 		if i < inputLength-1 && !(text[i] == '\\' && text[i+1] == 'n') {
-			return true
+			return false
 		}
 	}
-	return false
+	return true
 }
 
 func bannerScanner(banner string) []string {
