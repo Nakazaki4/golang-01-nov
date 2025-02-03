@@ -76,7 +76,7 @@ func isMultipleNewLines(text string) bool {
 		return false
 	}
 	for i := 0; i < inputLength; i+=2 {
-		if i < inputLength-1 && !(text[i] == '\\' && text[i+1] == 'n') {
+		if !(text[i] == '\\' && text[i+1] == 'n') {
 			return false
 		}
 	}
