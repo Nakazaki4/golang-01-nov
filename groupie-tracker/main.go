@@ -4,75 +4,57 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
-type Band struct {
-	ID           int      `json:"id"`
-	Image        string   `json:"image"` // link
-	Name         string   `json:"name"`
-	Members      []string `json:"members"`
-	CreationDate int      `json:"creationDate"`
-	FirstAlbum   string   `json:"firstAlbum"`
-	LocationsURL string   `json:"locations"`    // link
-	ConcertDates string   `json:"concertDates"` // link
-	Relations    string   `json:"relations"`    // link
-}
-
-type Locations struct {
-	ID        int      `json:"id"`
-	Locations []string `json:"locations"`
-	Dates     []string `json:"dates"`
-}
-
-var dates []string
-
 func main() {
-	response, err := http.Get("https://groupietrackers.herokuapp.com/api/artists")
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", artistHandler)
+	mux.HandleFunc("/artist/", artistDetailHandler)
 
-	if err != nil {
-		fmt.Println(err)
+	serve := &http.Server{
+		Addr:    ":8080",
+		Handler: logMiddleware(notFoundMiddleware(mux)),
 	}
-	defer response.Body.Close()
 
-	content, _ := io.ReadAll(response.Body)
-	bands := []Band{}
-	json.Unmarshal(content, &bands)
-
-	for i := 0; i < len(bands); i++ {
-		fetchLocations(bands[i].LocationsURL)
-		fmt.Println(bands[i].Name)
+	fmt.Println("Server started on http://localhost:8080")
+	if err := serve.ListenAndServe(); err != nil {
+		log.Fatalf("500 - Internal Server Error: %v", err)
 	}
 }
 
-func fetchLocations(url string) {
-	response, err := http.Get(url)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer response.Body.Close()
-
-	content, _ := io.ReadAll(response.Body)
-	var location Locations
-	json.Unmarshal(content, &location)
-
-	for i := 0; i < len(location.Dates); i++ {
-		fetchDates(location.Dates[i])
-		fmt.Print(location.Locations)
-	}
+func notFoundMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if path != "/" && path != "/artist/" {
+			notFoundHandler(w)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
-func fetchDates(url string) {
-	response, err := http.Get(url)
+func logMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("%s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+	})
+}
 
+// FetchJSON makes an HTTP GET request and unmarshals the response
+func FetchJSON(url string, target interface{}) error {
+	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
-	defer response.Body.Close()
+	defer resp.Body.Close()
 
-	content, _ := io.ReadAll(response.Body)
-	fmt.Println(content)
-	json.Unmarshal(content, &dates)
-	fmt.Println(dates)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	// If Unmarshalling fails an error will be returned
+	return json.Unmarshal(body, target)
 }
