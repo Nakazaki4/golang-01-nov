@@ -28,7 +28,7 @@ func init() {
 	}
 }
 
-// Handler function to fetch and display artists
+// Handler function to fetch and display artists in home page
 func artistHandler(wr http.ResponseWriter, r *http.Request) {
 	if !ValidatePath(r) {
 		fmt.Println("Invalid path")
@@ -64,53 +64,25 @@ func artistDetailHandler(wr http.ResponseWriter, r *http.Request) {
 
 	baseUrl := "https://groupietrackers.herokuapp.com/api"
 
-	apiURL := fmt.Sprintf("%s/artists/%s", baseUrl, id)
-	locationsApiURL := fmt.Sprintf("%s/locations/%s", baseUrl, id) // API URL
-	datesApiURL := fmt.Sprintf("%s/dates/%s", baseUrl, id)
-	relationsApiURL := fmt.Sprintf("%s/realtions/%s", baseUrl, id)
-
-	// endPoints := []APIEndPoint{
-	// 	{fmt.Sprintf("%s/artists/%s", baseUrl, id), &Band.}
-	// }
-
-	var artist Band
-	err := FetchJSON(apiURL, &artist)
-	if err != nil {
-		http.Error(wr, "Failed to fetch artist details", http.StatusInternalServerError)
-		return
-	}
-
-	var locations Locations
-	err = FetchJSON(locationsApiURL, &locations)
-	if err != nil {
-		http.Error(wr, "Failed to fetch Location", http.StatusInternalServerError)
-		return
-	}
-
-	var concertDates ConcertDates
-	err = FetchJSON(datesApiURL, &concertDates)
-	if err != nil {
-		http.Error(wr, "Failed to fetch ConcertDates", http.StatusInternalServerError)
-		return
-	}
-
-	var datesLocations DatesLocations
-	err = FetchJSON(relationsApiURL, &datesLocations)
-	if err != nil {
-		http.Error(wr, "Failed to fetch DatesLocations", http.StatusInternalServerError)
-		return
-	}
-
 	data := struct {
 		Artist         Band
 		Location       Locations
 		ConcertDate    ConcertDates
 		DatesLocations DatesLocations
-	}{
-		Artist:         artist,
-		Location:       locations,
-		ConcertDate:    concertDates,
-		DatesLocations: datesLocations,
+	}{}
+
+	endPoints := []APIEndPoint{
+		{fmt.Sprintf("%s/artists/%s", baseUrl, id), &data.Artist},
+		{fmt.Sprintf("%s/locations/%s", baseUrl, id), &data.Location},
+		{fmt.Sprintf("%s/dates/%s", baseUrl, id), &data.ConcertDate},
+		{fmt.Sprintf("%s/relation/%s", baseUrl, id), &data.DatesLocations},
+	}
+
+	for _, endpoint := range endPoints {
+		if err := FetchJSON(endpoint.URL, endpoint.Target); err != nil {
+			renderError(wr, http.StatusInternalServerError, "Failed to fetch data")
+			return
+		}
 	}
 
 	renderTemplate(wr, data, "artistDetails.html")
