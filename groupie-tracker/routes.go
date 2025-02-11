@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
+	"log"
 	"net/http"
 	"os"
 )
@@ -14,13 +15,26 @@ type Err struct {
 	Value   int
 }
 
+type APIEndPoint struct {
+	URL    string
+	Target interface{}
+}
+
+func init() {
+	var err error
+	tmpl, err = template.ParseGlob("./templates/*.html")
+	if err != nil {
+		log.Fatalf("Failed to initialize templates: %v", err)
+	}
+}
+
 // Handler function to fetch and display artists
-func artistHandler(w http.ResponseWriter, r *http.Request) {
-	if !ValidatePath(w, r) {
+func artistHandler(wr http.ResponseWriter, r *http.Request) {
+	if !ValidatePath(r) {
 		fmt.Println("Invalid path")
 		return
 	}
-	if !ValidateHttpMethod(w, http.MethodGet, r.Method) {
+	if !ValidateHttpMethod(wr, http.MethodGet, r.Method) {
 		return
 	}
 	apiURL := "https://groupietrackers.herokuapp.com/api/artists" // API URL
@@ -29,59 +43,61 @@ func artistHandler(w http.ResponseWriter, r *http.Request) {
 	// Fetch all artists
 	err := FetchJSON(apiURL, &bands)
 	if err != nil {
-		http.Error(w, "Failed to fetch artists", http.StatusInternalServerError)
+		renderError(wr, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
 	}
 
-	renderTemplate(w, bands, http.StatusOK, "homePage.html")
+	renderTemplate(wr, bands, "homePage.html")
 }
 
 // Handler to display a single artist's details
-func artistDetailHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ArtistDetailHAndler")
-	if !ValidatePath(w, r) {
-		fmt.Println("Invalid path")
-		return
-	}
-	if !ValidateHttpMethod(w, http.MethodGet, r.Method) {
-		return
-	}
-	id := r.URL.Query().Get("id")
-	if id == "" {
-		http.Error(w, "Missing artist ID", http.StatusBadRequest)
+func artistDetailHandler(wr http.ResponseWriter, r *http.Request) {
+	if !ValidatePath(r) || !ValidateHttpMethod(wr, http.MethodGet, r.Method) {
 		return
 	}
 
-	apiURL := fmt.Sprintf("https://groupietrackers.herokuapp.com/api/artists/%s", id)
-	locationsApiURL := fmt.Sprintf("https://groupietrackers.herokuapp.com/api/locations/%s", id) // API URL
-	datesApiURL := fmt.Sprintf("https://groupietrackers.herokuapp.com/api/dates/%s", id)
-	relationsApiURL := fmt.Sprintf("https://groupietrackers.herokuapp.com/api/relation/%s", id)
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		renderError(wr, http.StatusBadRequest, "Missing artist ID")
+		return
+	}
+
+	baseUrl := "https://groupietrackers.herokuapp.com/api"
+
+	apiURL := fmt.Sprintf("%s/artists/%s", baseUrl, id)
+	locationsApiURL := fmt.Sprintf("%s/locations/%s", baseUrl, id) // API URL
+	datesApiURL := fmt.Sprintf("%s/dates/%s", baseUrl, id)
+	relationsApiURL := fmt.Sprintf("%s/realtions/%s", baseUrl, id)
+
+	// endPoints := []APIEndPoint{
+	// 	{fmt.Sprintf("%s/artists/%s", baseUrl, id), &Band.}
+	// }
 
 	var artist Band
 	err := FetchJSON(apiURL, &artist)
 	if err != nil {
-		http.Error(w, "Failed to fetch artist details", http.StatusInternalServerError)
+		http.Error(wr, "Failed to fetch artist details", http.StatusInternalServerError)
 		return
 	}
 
 	var locations Locations
 	err = FetchJSON(locationsApiURL, &locations)
 	if err != nil {
-		http.Error(w, "Failed to fetch Location", http.StatusInternalServerError)
+		http.Error(wr, "Failed to fetch Location", http.StatusInternalServerError)
 		return
 	}
 
 	var concertDates ConcertDates
 	err = FetchJSON(datesApiURL, &concertDates)
 	if err != nil {
-		http.Error(w, "Failed to fetch ConcertDates", http.StatusInternalServerError)
+		http.Error(wr, "Failed to fetch ConcertDates", http.StatusInternalServerError)
 		return
 	}
 
 	var datesLocations DatesLocations
 	err = FetchJSON(relationsApiURL, &datesLocations)
 	if err != nil {
-		http.Error(w, "Failed to fetch DatesLocations", http.StatusInternalServerError)
+		http.Error(wr, "Failed to fetch DatesLocations", http.StatusInternalServerError)
 		return
 	}
 
@@ -97,43 +113,52 @@ func artistDetailHandler(w http.ResponseWriter, r *http.Request) {
 		DatesLocations: datesLocations,
 	}
 
-	renderTemplate(w, data, http.StatusOK, "artistDetails.html")
+	renderTemplate(wr, data, "artistDetails.html")
 }
 
-func ValidateHttpMethod(w http.ResponseWriter, expectedMethod, actualMethod string) bool {
+func ValidateHttpMethod(wr http.ResponseWriter, expectedMethod, actualMethod string) bool {
 	if expectedMethod != actualMethod {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		renderError(wr, http.StatusMethodNotAllowed, http.StatusText(http.StatusMethodNotAllowed))
 		return false
 	}
 	return true
 }
 
-func ValidatePath(w http.ResponseWriter, r *http.Request) bool {
-	if r.URL.Path != "/" && r.URL.Path != "/artist/" {
-		return false
+func ValidatePath(r *http.Request) bool {
+	validPaths := map[string]bool{
+		"/":        true,
+		"/artist/": true,
 	}
-	return true
+	return validPaths[r.URL.Path]
 }
 
-func notFoundHandler(w http.ResponseWriter) {
-	w.WriteHeader(http.StatusNotFound)
-	Err := &Err{
-		Message: http.StatusText(http.StatusNotFound),
-		Value:   http.StatusNotFound,
-	}
-	tmpl := template.Must(template.ParseFiles("./templates/error.html"))
-	tmpl.Execute(w, Err)
+func notFoundHandler(wr http.ResponseWriter) {
+	renderError(wr, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
-func renderTemplate(w http.ResponseWriter, data interface{}, statusCode int, template string) {
+func renderTemplate(wr http.ResponseWriter, data interface{}, template string) {
 	if isFileAvailable(template) {
-		w.WriteHeader(statusCode)
-		tmpl.ParseFiles("templates/" + template)
-		tmpl.Execute(w, data)
+		err := tmpl.ExecuteTemplate(wr, template, data)
+		if err != nil {
+			renderError(wr, http.StatusInternalServerError, "Template Rendering Error")
+		}
 	} else {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "500 - Internal server error")
+		renderError(wr, http.StatusInternalServerError, template+" not available")
 	}
+}
+
+func renderError(wr http.ResponseWriter, statusCode int, msg string) {
+	if isFileAvailable("errorPage.html") {
+		wr.WriteHeader(statusCode)
+		renderTemplate(wr, &Err{Message: msg, Value: statusCode}, "errorPage.html")
+	} else {
+		fallbackErrorMessage(wr)
+	}
+}
+
+func fallbackErrorMessage(wr http.ResponseWriter) {
+	wr.WriteHeader(http.StatusInternalServerError)
+	fmt.Fprintln(wr, "Error 500: Website is under maintenance for security issues.")
 }
 
 func isFileAvailable(file string) bool {
