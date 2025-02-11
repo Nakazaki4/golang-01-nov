@@ -8,6 +8,7 @@ import (
 	"os"
 )
 
+var baseURL = "https://groupietrackers.herokuapp.com/api"
 var tmpl *template.Template
 
 type Err struct {
@@ -37,11 +38,10 @@ func artistHandler(wr http.ResponseWriter, r *http.Request) {
 	if !ValidateHttpMethod(wr, http.MethodGet, r.Method) {
 		return
 	}
-	apiURL := "https://groupietrackers.herokuapp.com/api/artists" // API URL
 	var bands []Band
 
 	// Fetch all artists
-	err := FetchJSON(apiURL, &bands)
+	err := FetchJSON(baseURL+"/artists", &bands)
 	if err != nil {
 		renderError(wr, http.StatusInternalServerError, http.StatusText(http.StatusInternalServerError))
 		return
