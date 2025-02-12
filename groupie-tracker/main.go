@@ -10,6 +10,8 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
+	fileServer := http.FileServer(http.Dir("static"))
+	mux.Handle("/static/", http.StripPrefix("/static/", fileServer))
 	mux.HandleFunc("/", artistHandler)
 	mux.HandleFunc("/artist/", artistDetailHandler)
 
@@ -26,8 +28,14 @@ func main() {
 
 func notFoundMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		if path != "/" && path != "/artist/" {
+		allowedPaths := map[string]bool{
+			"/":                             true,
+			"/artist/":                      true,
+			"/static/css/homePage.css":      true,
+			"/static/css/errorPage.css":     true,
+			"/static/css/artistDetails.css": true,
+		}
+		if !allowedPaths[r.URL.Path] {
 			notFoundHandler(w)
 			return
 		}

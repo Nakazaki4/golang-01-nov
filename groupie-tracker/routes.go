@@ -8,8 +8,10 @@ import (
 	"os"
 )
 
-var baseURL = "https://groupietrackers.herokuapp.com/api"
-var tmpl *template.Template
+var (
+	baseURL = "https://groupietrackers.herokuapp.com/api"
+	tmpl    *template.Template
+)
 
 type Err struct {
 	Message string

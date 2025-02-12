@@ -1,40 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Value}} - Page Not Found</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            color: #333;
-        }
-        .container {
-            text-align: center;
-        }
-        h1 {
-            font-size: 100px;
-            color: #ff6347;
-        }
-        p {
-            font-size: 20px;
-        }
-        a {
-            text-decoration: none;
-            color: #ff6347;
-            font-weight: bold;
-        }
-        a:hover {
-            color: #d45b3a;
-        }
-    </style>
+    <link href="/static/css/errorPage.css" rel="stylesheet"/>
 </head>
+
 <body>
     <div class="container">
         <h1>{{.Value}}</h1>
@@ -42,4 +15,5 @@
         <p><a href="/">Go back to the homepage</a></p>
     </div>
 </body>
+
 </html>
