@@ -94,8 +94,8 @@ func loginRequest(conn net.Conn) string {
 		}
 
 		username = strings.TrimSpace(name)
-		if username == "" {
-			conn.Write([]byte("Name cannot be empty.\n[ENTER YOUR NAME]: "))
+		if username == "" || !isNameValid(username) {
+			conn.Write([]byte("Name cannot be empty or contains non-alphanumeric charcters.\n[ENTER YOUR NAME]: "))
 			continue
 		}
 		Mutex.Lock()
@@ -110,6 +110,15 @@ func loginRequest(conn net.Conn) string {
 		break
 	}
 	return strings.TrimSpace(username)
+}
+
+func isNameValid(username string) bool {
+	for _, char := range username {
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')) {
+			return false
+		}
+	}
+	return true
 }
 
 func userJoined(username string, client Client) {
@@ -134,7 +143,7 @@ func handleUserInput(client Client) {
 		if string(trimmedMsg) == "" {
 			continue
 		}
-		fmt.Println(trimmedMsg)
+		fmt.Println(string(trimmedMsg))
 		broadcastMessage(trimmedMsg, client)
 	}
 	defer client.conn.Close()
@@ -179,7 +188,7 @@ func broadcastMessage(msg []byte, sender Client) {
 
 func formatMessage(username, message string) []byte {
 	time := time.Now().Format("2006-01-02 15:04:05")
-	return []byte(fmt.Sprintf("[%s][%s]: %s", time, username, message))
+	return []byte(fmt.Sprintf("[%s][%s]: %s\n", time, username, message))
 }
 
 func saveMessage(msg string) {
