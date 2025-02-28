@@ -17,7 +17,7 @@ func main() {
 
 	serve := &http.Server{
 		Addr:    ":8080",
-		Handler: logMiddleware(notFoundMiddleware(mux)),
+		Handler: logMiddleware(pathMiddleware(mux)),
 	}
 
 	fmt.Println("Server started on http://localhost:8080")
@@ -26,7 +26,7 @@ func main() {
 	}
 }
 
-func notFoundMiddleware(next http.Handler) http.Handler {
+func pathMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		allowedPaths := map[string]bool{
 			"/":                             true,
@@ -36,7 +36,7 @@ func notFoundMiddleware(next http.Handler) http.Handler {
 			"/static/css/artistDetails.css": true,
 		}
 		if !allowedPaths[r.URL.Path] {
-			notFoundHandler(w)
+			renderError(w, http.StatusNotFound, "The page you searching for does not exist.")
 			return
 		}
 		next.ServeHTTP(w, r)

@@ -94,7 +94,7 @@ func loginRequest(conn net.Conn) string {
 		}
 
 		username = strings.TrimSpace(name)
-		if username == "" || !isNameValid(username) {
+		if username == "" || !isValidText(username) {
 			conn.Write([]byte("Name cannot be empty or contains non-alphanumeric charcters.\n[ENTER YOUR NAME]: "))
 			continue
 		}
@@ -112,9 +112,9 @@ func loginRequest(conn net.Conn) string {
 	return strings.TrimSpace(username)
 }
 
-func isNameValid(username string) bool {
-	for _, char := range username {
-		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')) {
+func isValidText(text string) bool {
+	for _, char := range text {
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '\x1b' || char == ' ') {
 			return false
 		}
 	}
@@ -123,14 +123,16 @@ func isNameValid(username string) bool {
 
 func userJoined(username string, client Client) {
 	announcement := fmt.Sprintf("%s have joined the room\n", username)
-	broadcastAnouncMessage([]byte(announcement), client)
+	broadcastAnouncMessage((announcement), client)
 }
 
 func handleUserInput(client Client) {
-	message := make([]byte, 1024)
+	defer client.conn.Close()
+
+	reader := bufio.NewReader(client.conn)
 
 	for {
-		size, err := client.conn.Read(message)
+		msg, err := reader.ReadString('\n')
 		if err != nil {
 			if err != io.EOF {
 				fmt.Println("read error:", err)
@@ -138,15 +140,21 @@ func handleUserInput(client Client) {
 			removeUser(client.conn)
 			break
 		}
-		receivedMessage := message[:size]
-		trimmedMsg := []byte(strings.TrimSpace(string(receivedMessage)))
-		if string(trimmedMsg) == "" {
+
+		msg = strings.TrimSpace(msg)
+		if msg == "" || !isValidText(msg) {
 			continue
 		}
-		fmt.Println(string(trimmedMsg))
-		broadcastMessage(trimmedMsg, client)
+		fmt.Println("->" + msg)
+
+		broadcastMessage(msg, client)
+		refreshInput(client, msg)
 	}
-	defer client.conn.Close()
+}
+
+func refreshInput(client Client, msg string) {
+	client.conn.Write([]byte("\033[A\033[K"))
+	client.conn.Write([]byte(formatMessage(client.name, msg)))
 }
 
 func removeUser(conn net.Conn) {
@@ -155,13 +163,13 @@ func removeUser(conn net.Conn) {
 		if client.conn == conn {
 			Clients = append(Clients[:i], Clients[i+1:]...)
 			leftMessage := fmt.Sprintf("%v left the chat room\n", client.name)
-			broadcastAnouncMessage([]byte(leftMessage), client)
+			broadcastAnouncMessage((leftMessage), client)
 		}
 	}
 	defer Mutex.Unlock()
 }
 
-func broadcastAnouncMessage(msg []byte, sender Client) {
+func broadcastAnouncMessage(msg string, sender Client) {
 	formattedMessage := fmt.Sprintf("-> %s ", string(msg))
 	for _, client := range Clients {
 		if sender.conn != client.conn {
@@ -173,8 +181,8 @@ func broadcastAnouncMessage(msg []byte, sender Client) {
 	}
 }
 
-func broadcastMessage(msg []byte, sender Client) {
-	formattedMessage := formatMessage(sender.name, string(msg))
+func broadcastMessage(msg string, sender Client) {
+	formattedMessage := formatMessage(sender.name, msg)
 	saveMessage(string(formattedMessage))
 	for _, client := range Clients {
 		if sender.conn != client.conn {

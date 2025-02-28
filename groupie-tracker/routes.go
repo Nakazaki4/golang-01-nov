@@ -33,10 +33,6 @@ func init() {
 
 // Handler function to fetch and display artists in home page
 func artistHandler(wr http.ResponseWriter, r *http.Request) {
-	if !ValidatePath(r) {
-		fmt.Println("Invalid path")
-		return
-	}
 	if !ValidateHttpMethod(wr, http.MethodGet, r.Method) {
 		return
 	}
@@ -54,7 +50,7 @@ func artistHandler(wr http.ResponseWriter, r *http.Request) {
 
 // Handler to display a single artist's details
 func artistDetailHandler(wr http.ResponseWriter, r *http.Request) {
-	if !ValidatePath(r) || !ValidateHttpMethod(wr, http.MethodGet, r.Method) {
+	if !ValidateHttpMethod(wr, http.MethodGet, r.Method) {
 		return
 	}
 
@@ -96,18 +92,6 @@ func ValidateHttpMethod(wr http.ResponseWriter, expectedMethod, actualMethod str
 		return false
 	}
 	return true
-}
-
-func ValidatePath(r *http.Request) bool {
-	validPaths := map[string]bool{
-		"/":        true,
-		"/artist/": true,
-	}
-	return validPaths[r.URL.Path]
-}
-
-func notFoundHandler(wr http.ResponseWriter) {
-	renderError(wr, http.StatusNotFound, http.StatusText(http.StatusNotFound))
 }
 
 func renderTemplate(wr http.ResponseWriter, data interface{}, template string) {
