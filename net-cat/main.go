@@ -37,7 +37,7 @@ func main() {
 			log.Println("Error adding user")
 			continue
 		}
-		if len(Clients) <= 10 {
+		if len(Clients) < 3 {
 			go handleConnection(conn)
 		} else {
 			conn.Write([]byte("This room chat accepts only 10 members."))
