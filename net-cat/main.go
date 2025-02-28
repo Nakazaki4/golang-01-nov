@@ -37,7 +37,7 @@ func main() {
 			log.Println("Error adding user")
 			continue
 		}
-		if len(Clients) < 10 {
+		if len(Clients) <= 10 {
 			go handleConnection(conn)
 		} else {
 			conn.Write([]byte("This room chat accepts only 10 members."))
@@ -98,15 +98,19 @@ func loginRequest(conn net.Conn) string {
 			conn.Write([]byte("Name cannot be empty or contains non-alphanumeric charcters.\n[ENTER YOUR NAME]: "))
 			continue
 		}
+		nameTaken := false
 		Mutex.Lock()
 		for _, c := range Clients {
 			if c.name == username {
-				conn.Write([]byte("Name is taken.\n[ENTER YOUR NAME]: "))
-				Mutex.Unlock()
-				continue
+				nameTaken = true
+				break
 			}
 		}
 		Mutex.Unlock()
+		if nameTaken {
+			conn.Write([]byte("Name is taken.\n[ENTER YOUR NAME]: "))
+			continue
+		}
 		break
 	}
 	return strings.TrimSpace(username)
@@ -114,7 +118,7 @@ func loginRequest(conn net.Conn) string {
 
 func isValidText(text string) bool {
 	for _, char := range text {
-		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || char == '\x1b' || char == ' ') {
+		if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') || char == '\x1b' || char == ' ') {
 			return false
 		}
 	}
